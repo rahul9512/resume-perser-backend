@@ -1,0 +1,9 @@
+spacy
+fastapi
+uvicorn
+supabase
+python-jose[cryptography]
+python-multipart
+scikit-learn
+pdfplumber
+numpy

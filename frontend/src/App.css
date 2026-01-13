@@ -1,0 +1,193 @@
+.app-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+  width: 100%;
+  position: relative;
+}
+
+.page-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 85vh;
+  width: 100%;
+}
+
+/* --- Spectral Glass Panels --- */
+
+.glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
+  border: 1px solid var(--glass-border);
+  box-shadow:
+    0 25px 50px -12px rgba(0, 0, 0, 0.5),
+    inset 0 0 0 1px var(--glass-highlight);
+  border-radius: 24px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+/* Crystalline Highlight Effect */
+.glass-panel::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg,
+      transparent,
+      rgba(255, 255, 255, 0.05),
+      transparent);
+  transition: 0.6s;
+}
+
+.glass-panel:hover::after {
+  left: 100%;
+}
+
+.glass-panel:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    0 30px 60px -10px rgba(0, 0, 0, 0.6),
+    0 0 20px rgba(139, 92, 246, 0.15);
+  /* Soft Purple Glow */
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 440px;
+  padding: 3.5rem;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 3rem;
+  width: 100%;
+}
+
+.card {
+  padding: 2.5rem;
+}
+
+/* --- Spectral Inputs --- */
+
+.glass-input {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--glass-border);
+  color: var(--text-main);
+  padding: 1.1rem 1.4rem;
+  border-radius: 14px;
+  width: 100%;
+  box-sizing: border-box;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+}
+
+.glass-input:focus {
+  outline: none;
+  border-color: var(--secondary);
+  /* Cyan */
+  background: rgba(0, 0, 0, 0.4);
+  box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.2);
+}
+
+/* --- Multi-Color Gradient Buttons --- */
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--indigo) 50%, var(--secondary) 100%);
+  color: white;
+  padding: 1rem 2rem;
+  border-radius: 14px;
+  border: none;
+  font-weight: 700;
+  font-size: 1.05rem;
+  cursor: pointer;
+  width: 100%;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 8px 16px -4px rgba(139, 92, 246, 0.4);
+}
+
+.btn-primary:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 12px 24px -6px rgba(139, 92, 246, 0.6);
+  filter: saturate(1.2);
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
+  color: var(--text-main);
+  padding: 0.8rem 1.5rem;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s;
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--text-main);
+}
+
+/* --- Upload Area --- */
+
+.upload-zone {
+  border: 2px dashed var(--glass-border);
+  border-radius: 20px;
+  padding: 4.5rem 2rem;
+  text-align: center;
+  transition: all 0.4s;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.01);
+}
+
+.upload-zone:hover {
+  border-color: var(--secondary);
+  background: rgba(6, 182, 212, 0.03);
+  transform: scale(1.01);
+}
+
+/* --- Animations --- */
+
+@keyframes float {
+  0% {
+    transform: translateY(0px) rotate(0deg);
+  }
+
+  50% {
+    transform: translateY(-15px) rotate(1deg);
+  }
+
+  100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+}
+
+.animate-float {
+  animation: float 8s ease-in-out infinite;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+    filter: blur(15px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
