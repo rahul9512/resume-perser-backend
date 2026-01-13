@@ -1,9 +1,15 @@
-spacy
 fastapi
 uvicorn
 supabase
 python-jose[cryptography]
 python-multipart
+spacy
+nltk
 scikit-learn
 pdfplumber
 numpy
+requests
+pydantic
+pydantic-settings
+typing-extensions
+python-dotenv
