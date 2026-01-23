@@ -28,6 +28,11 @@ console.log("🚀 LATEST BUILD - Using API:", getApiUrl());
 
 const API_BASE_URL = getApiUrl();
 
+// MANDATORY ALERT TO CONFIRM DEPLOYMENT
+if (window.location.hostname.includes("vercel.app")) {
+  alert("Vercel: Connecting to Render at " + API_BASE_URL);
+}
+
 // Loud alert to confirm update
 if (window.location.hostname.includes("vercel.app")) {
   console.log("🔥 PROD MODE ENABLED:", API_BASE_URL);
