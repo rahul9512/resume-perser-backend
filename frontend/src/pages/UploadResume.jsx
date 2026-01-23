@@ -2,6 +2,19 @@ import { supabase } from "../supabaseClient";
 import { UploadCloud, CheckCircle } from "lucide-react";
 import { useState } from "react";
 
+// Helper to get API URL consistently
+const getApiUrl = () => {
+  // Check if App.jsx has defined a global fallback (though this is a separate file)
+  // We'll use the same logic here to be safe
+  const envUrl = import.meta.env.VITE_API_URL;
+  if (window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1") {
+    // In production, we force it to look at the environment variable
+    // If that's missing, it will at least not hit localhost
+    return envUrl || "";
+  }
+  return envUrl || "http://127.0.0.1:8000";
+};
+
 export default function UploadResume({ onUploadSuccess }) {
   const [status, setStatus] = useState("idle"); // idle, uploading, success, error
 
@@ -9,7 +22,6 @@ export default function UploadResume({ onUploadSuccess }) {
     const file = e.target.files[0];
     if (!file) return;
 
-    // 25MB limit check
     if (file.size > 25 * 1024 * 1024) {
       alert("File is too large. Max size is 25MB.");
       return;
@@ -22,8 +34,15 @@ export default function UploadResume({ onUploadSuccess }) {
     const formData = new FormData();
     formData.append("file", file);
 
+    const apiUrl = getApiUrl();
+    if (!apiUrl && window.location.hostname !== 'localhost') {
+      alert("API URL not configured in Vercel settings!");
+      setStatus("error");
+      return;
+    }
+
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/upload-resume`, {
+      const res = await fetch(`${apiUrl}/upload-resume`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`
@@ -39,7 +58,6 @@ export default function UploadResume({ onUploadSuccess }) {
         const errorMsg = result.detail || JSON.stringify(result);
         alert("Upload Failed: " + errorMsg);
         setStatus("error");
-        console.error("Backend Error:", result);
       }
     } catch (err) {
       alert("Network or Connection Error: " + err.message);

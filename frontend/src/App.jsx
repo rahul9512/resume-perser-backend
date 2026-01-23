@@ -7,6 +7,24 @@ import JobDescription from "./pages/JobDescription";
 import { Trash2, History, RefreshCcw, CheckSquare, Square } from "lucide-react";
 import "./App.css";
 
+// --- CONFIGURATION ---
+// If Vercel settings are tricky, you can paste your Render URL here:
+const RENDER_BACKEND_URL = "https://your-backend-name.onrender.com";
+
+const getApiUrl = () => {
+  const envUrl = import.meta.env.VITE_API_URL;
+  if (envUrl && !envUrl.includes("127.0.0.1") && !envUrl.includes("localhost")) {
+    return envUrl;
+  }
+  // If we are on Vercel but URL is still local, use the hardcoded one
+  if (window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1") {
+    return RENDER_BACKEND_URL;
+  }
+  return envUrl || "http://127.0.0.1:8000";
+};
+
+const API_BASE_URL = getApiUrl();
+
 // Protected Route Component
 const ProtectedRoute = ({ session, loading, children }) => {
   if (loading) return (
@@ -31,7 +49,7 @@ function App() {
   const [currentJobId, setCurrentJobId] = useState(null);
 
   useEffect(() => {
-    console.log("Current API URL:", import.meta.env.VITE_API_URL);
+    console.log("Using API URL:", API_BASE_URL);
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setLoading(false);
@@ -61,7 +79,7 @@ function App() {
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/resume/${id}`, {
+      const res = await fetch(`${API_BASE_URL}/resume/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${session.access_token}` }
       });
@@ -91,7 +109,7 @@ function App() {
     const { data: { session } } = await supabase.auth.getSession();
 
     try {
-      const url = new URL(`${import.meta.env.VITE_API_URL}/match-resumes`);
+      const url = new URL(`${API_BASE_URL}/match-resumes`);
       url.searchParams.append("job_id", targetJobId);
       if (resumeId) url.searchParams.append("resume_id", resumeId);
 
