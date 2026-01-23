@@ -28,6 +28,7 @@ function App() {
   const [analyzing, setAnalyzing] = useState(false);
 
   useEffect(() => {
+    console.log("Current API URL:", import.meta.env.VITE_API_URL);
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setLoading(false);
@@ -51,7 +52,7 @@ function App() {
 
     try {
       // 1. Trigger or fetch results
-      const res = await fetch(`http://127.0.0.1:8000/match-resumes?job_id=${jobId}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/match-resumes?job_id=${jobId}`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${session.access_token}` }
       });

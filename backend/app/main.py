@@ -5,11 +5,21 @@ from app.routes import resume, job, match
 app = FastAPI(title="Resume Parser & Screening System")
 from fastapi.middleware.cors import CORSMiddleware
 
-frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
+# Robust CORS configuration
+origins = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:3000",
+]
+
+env_origin = os.getenv("FRONTEND_URL")
+if env_origin:
+    # Remove trailing slash if present to match origin format
+    origins.append(env_origin.rstrip("/"))
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[frontend_url],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

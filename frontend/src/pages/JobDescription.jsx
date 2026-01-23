@@ -29,7 +29,7 @@ export default function JobDescription({ onAnalysisStarted }) {
     const jobId = `job_${Date.now()}`;
 
     try {
-      const res = await fetch("http://127.0.0.1:8000/parse-job", {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/parse-job`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
