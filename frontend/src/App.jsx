@@ -168,13 +168,13 @@ function App() {
                   <h2 style={{ fontSize: '1.75rem', display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '2rem' }}>
                     <span className="icon-box">📄</span> Upload Resume
                   </h2>
-                  <UploadResume onUploadSuccess={(id) => runAnalysis(null, id)} />
+                  <UploadResume onUploadSuccess={(id) => runAnalysis(null, id)} apiUrl={API_BASE_URL} />
                 </div>
                 <div className="glass-panel card">
                   <h2 style={{ fontSize: '1.75rem', display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '2rem' }}>
                     <span className="icon-box" style={{ background: 'var(--accent)' }}>💼</span> Job Details
                   </h2>
-                  <JobDescription onAnalysisStarted={(id) => runAnalysis(id)} />
+                  <JobDescription onAnalysisStarted={(id) => runAnalysis(id)} apiUrl={API_BASE_URL} />
                 </div>
               </div>
 

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { supabase } from "../supabaseClient";
 import { Send, Search, FileText, Plus, X } from "lucide-react";
 
-export default function JobDescription({ onAnalysisStarted }) {
+export default function JobDescription({ onAnalysisStarted, apiUrl }) {
   const [mode, setMode] = useState("jd"); // jd or keywords
   const [desc, setDesc] = useState("");
   const [keywords, setKeywords] = useState([]);
@@ -29,7 +29,7 @@ export default function JobDescription({ onAnalysisStarted }) {
     const jobId = `job_${Date.now()}`;
 
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/parse-job`, {
+      const res = await fetch(`${apiUrl}/parse-job`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

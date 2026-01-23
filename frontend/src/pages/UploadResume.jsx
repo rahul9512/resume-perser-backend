@@ -2,20 +2,7 @@ import { supabase } from "../supabaseClient";
 import { UploadCloud, CheckCircle } from "lucide-react";
 import { useState } from "react";
 
-// Helper to get API URL consistently
-const getApiUrl = () => {
-  // Check if App.jsx has defined a global fallback (though this is a separate file)
-  // We'll use the same logic here to be safe
-  const envUrl = import.meta.env.VITE_API_URL;
-  if (window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1") {
-    // In production, we force it to look at the environment variable
-    // If that's missing, it will at least not hit localhost
-    return envUrl || "";
-  }
-  return envUrl || "http://127.0.0.1:8000";
-};
-
-export default function UploadResume({ onUploadSuccess }) {
+export default function UploadResume({ onUploadSuccess, apiUrl }) {
   const [status, setStatus] = useState("idle"); // idle, uploading, success, error
 
   const upload = async (e) => {
@@ -33,13 +20,6 @@ export default function UploadResume({ onUploadSuccess }) {
 
     const formData = new FormData();
     formData.append("file", file);
-
-    const apiUrl = getApiUrl();
-    if (!apiUrl && window.location.hostname !== 'localhost') {
-      alert("API URL not configured in Vercel settings!");
-      setStatus("error");
-      return;
-    }
 
     try {
       const res = await fetch(`${apiUrl}/upload-resume`, {
