@@ -34,8 +34,6 @@ def match_resumes(job_id: str, user=Depends(verify_jwt)):
         for res in results:
             idx = res["resume_index"]
             res["filename"] = resumes_response.data[idx].get("filename")
-            res["id"] = resumes_response.data[idx].get("id")
-            res["created_at"] = resumes_response.data[idx].get("created_at")
 
         supabase.table("results").insert({
             "job_id": job_id,
