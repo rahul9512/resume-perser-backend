@@ -9,7 +9,7 @@ import "./App.css";
 
 // --- CONFIGURATION ---
 // If Vercel settings are tricky, you can paste your Render URL here:
-const RENDER_BACKEND_URL = "https://your-backend-name.onrender.com";
+const RENDER_BACKEND_URL = "https://resume-perser-backend-2.onrender.com";
 
 const getApiUrl = () => {
   const envUrl = import.meta.env.VITE_API_URL;
