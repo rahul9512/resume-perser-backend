@@ -154,39 +154,44 @@ function App() {
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                  {results.length > 0 ? results.map((res, i) => (
-                    <div key={res.id || i} className="glass-panel animate-slide-up candidate-card" style={{ borderLeft: `6px solid ${res.eligibility === 'Eligible' ? '#10b981' : '#ef4444'}` }}>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', marginBottom: '0.75rem' }}>
-                          <h3 style={{ fontSize: '1.4rem', margin: 0 }}>{res.filename || `Candidate #${i + 1}`}</h3>
-                          <span className={`badge ${res.eligibility === 'Eligible' ? 'eligible' : 'not-eligible'}`}>
-                            {res.eligibility}
-                          </span>
+                  {results.length > 0 ? results
+                    .sort((a, b) => {
+                      if (b.match_score !== a.match_score) return b.match_score - a.match_score;
+                      return new Date(b.created_at) - new Date(a.created_at);
+                    })
+                    .map((res, i) => (
+                      <div key={res.id || i} className="glass-panel animate-slide-up candidate-card" style={{ borderLeft: `6px solid ${res.eligibility === 'Eligible' ? '#10b981' : '#ef4444'}` }}>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', marginBottom: '0.75rem' }}>
+                            <h3 style={{ fontSize: '1.4rem', margin: 0 }}>{res.filename || `Candidate #${i + 1}`}</h3>
+                            <span className={`badge ${res.eligibility === 'Eligible' ? 'eligible' : 'not-eligible'}`}>
+                              {res.eligibility}
+                            </span>
+                          </div>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                            {res.details?.matched_skills?.map(s => (
+                              <span key={s} className="skill-tag">{s}</span>
+                            ))}
+                          </div>
                         </div>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                          {res.details?.matched_skills?.map(s => (
-                            <span key={s} className="skill-tag">{s}</span>
-                          ))}
+                        <div style={{ textAlign: 'right', display: 'flex', alignItems: 'center', gap: '2.5rem' }}>
+                          <div>
+                            <p className="score-main">{Math.round(res.match_score)}<span style={{ fontSize: '1.2rem', opacity: 0.5 }}>%</span></p>
+                            <p className="score-sub">Confidence</p>
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                            <button className="btn-secondary btn-sm" onClick={() => window.open(res.file_url, '_blank')}>View</button>
+                            <button
+                              className="btn-delete"
+                              style={{ padding: '6px', fontSize: '0.7rem' }}
+                              onClick={() => handleDeleteResume(res.id)}
+                            >
+                              <Trash2 size={16} /> Delete
+                            </button>
+                          </div>
                         </div>
                       </div>
-                      <div style={{ textAlign: 'right', display: 'flex', alignItems: 'center', gap: '2.5rem' }}>
-                        <div>
-                          <p className="score-main">{Math.round(res.match_score)}<span style={{ fontSize: '1.2rem', opacity: 0.5 }}>%</span></p>
-                          <p className="score-sub">Confidence</p>
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                          <button className="btn-secondary btn-sm" onClick={() => window.open(res.file_url, '_blank')}>View</button>
-                          <button
-                            className="btn-delete"
-                            style={{ padding: '6px', fontSize: '0.7rem' }}
-                            onClick={() => handleDeleteResume(res.id)}
-                          >
-                            <Trash2 size={16} /> Delete
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  )) : (
+                    )) : (
                     <div className="glass-panel card" style={{ textAlign: 'center', padding: '4rem', opacity: 0.5 }}>
                       <p>Upload a resume and enter job details to see top matches.</p>
                       {currentJobId && <p style={{ fontSize: '0.9rem' }}>Or click Refresh to analyze existing resumes.</p>}
