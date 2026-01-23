@@ -28,6 +28,11 @@ console.log("🚀 LATEST BUILD - Using API:", getApiUrl());
 
 const API_BASE_URL = getApiUrl();
 
+// Loud alert to confirm update
+if (window.location.hostname.includes("vercel.app")) {
+  console.log("🔥 PROD MODE ENABLED:", API_BASE_URL);
+}
+
 // Protected Route Component
 const ProtectedRoute = ({ session, loading, children }) => {
   if (loading) return (
@@ -155,7 +160,7 @@ function App() {
             WebkitTextFillColor: 'transparent',
             fontWeight: 800
           }}>
-            Resume AI
+            Resume AI <span style={{ fontSize: '0.7rem', opacity: 0.5, border: '1px solid', padding: '2px 6px', borderRadius: '4px', verticalAlign: 'middle' }}>v2.0 PROD</span>
           </h1>
           {session && (
             <button onClick={handleLogout} className="btn-secondary">Logout</button>
