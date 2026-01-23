@@ -12,16 +12,19 @@ import "./App.css";
 const RENDER_BACKEND_URL = "https://resume-perser-backend-2.onrender.com";
 
 const getApiUrl = () => {
+  // If we are on Vercel, ALWAYS force the Render URL as the first priority
+  if (window.location.hostname.includes("vercel.app")) {
+    return RENDER_BACKEND_URL;
+  }
+
   const envUrl = import.meta.env.VITE_API_URL;
   if (envUrl && !envUrl.includes("127.0.0.1") && !envUrl.includes("localhost")) {
     return envUrl;
   }
-  // If we are on Vercel but URL is still local, use the hardcoded one
-  if (window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1") {
-    return RENDER_BACKEND_URL;
-  }
-  return envUrl || "http://127.0.0.1:8000";
+  return "http://127.0.0.1:8000";
 };
+
+console.log("🚀 LATEST BUILD - Using API:", getApiUrl());
 
 const API_BASE_URL = getApiUrl();
 
