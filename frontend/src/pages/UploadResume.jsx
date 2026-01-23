@@ -2,7 +2,7 @@ import { supabase } from "../supabaseClient";
 import { UploadCloud, CheckCircle } from "lucide-react";
 import { useState } from "react";
 
-export default function UploadResume() {
+export default function UploadResume({ onUploadSuccess }) {
   const [status, setStatus] = useState("idle"); // idle, uploading, success, error
 
   const upload = async (e) => {
@@ -34,6 +34,7 @@ export default function UploadResume() {
       const result = await res.json();
       if (res.ok) {
         setStatus("success");
+        if (onUploadSuccess) onUploadSuccess(result.id);
       } else {
         const errorMsg = result.detail || JSON.stringify(result);
         alert("Upload Failed: " + errorMsg);
