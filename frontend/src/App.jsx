@@ -95,7 +95,7 @@ function App() {
     try {
       const url = new URL(`${API_BASE_URL}/match-resumes`);
       url.searchParams.append("job_id", targetJobId);
-      url.searchParams.append("resume_id", resumeId); // Always pass resume_id to ensure single focus
+      url.searchParams.append("resume_id", finalResumeId); // Fixed: Use the resolved ID
 
       const res = await fetch(url.toString(), {
         method: 'POST',
