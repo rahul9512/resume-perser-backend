@@ -8,24 +8,33 @@ router = APIRouter()
 
 @router.post("/match-resumes")
 def match_resumes(
-    job_id: str = Body(...), 
-    resume_id: Optional[str] = Body(None), 
+    job_id: Optional[str] = Query(None), 
+    resume_id: Optional[str] = Query(None), 
+    body: Optional[dict] = Body(None),
     user=Depends(verify_jwt)
 ):
-    # 1. Fetch job details
-    print(f"DEBUG: Starting match request for job_id: {job_id}")
-    job_response = supabase.table("jobs").select("*").eq("job_id", job_id).execute()
+    # 1. Resolve Parameters (Support both old Query and new Body styles)
+    actual_job_id = job_id or (body.get("job_id") if body else None)
+    actual_resume_id = resume_id or (body.get("resume_id") if body else None)
+
+    print(f"DEBUG: Starting match request - Job: {actual_job_id}, Resume: {actual_resume_id}")
+    
+    if not actual_job_id:
+        return {"error": "Missing field: job_id (Check both query and body)"}
+
+    # 2. Fetch job details
+    job_response = supabase.table("jobs").select("*").eq("job_id", actual_job_id).execute()
     if not job_response.data:
-         print(f"WARNING: Job {job_id} not found in database.")
-         return {"error": "Job not found"} 
+         print(f"WARNING: Job {actual_job_id} not found.")
+         return {"error": f"Job {actual_job_id} not found"} 
     
     job_data = job_response.data[0]
     print(f"DEBUG: Found job: {job_data.get('job_id')}")
 
     # 2. Fetch resumes (Either one specific or all for user)
     query = supabase.table("resumes").select("*").eq("user_id", user["sub"])
-    if resume_id:
-        query = query.eq("id", resume_id)
+    if actual_resume_id:
+        query = query.eq("id", actual_resume_id)
     
     resumes_response = query.execute()
     raw_resumes = resumes_response.data or []

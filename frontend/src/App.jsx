@@ -32,6 +32,7 @@ const ProtectedRoute = ({ session, loading, children }) => {
 };
 
 function App() {
+  console.log("APP VERSION: 2.1.0-FIXED-MATCH-V3");
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
   const [results, setResults] = useState([]);
