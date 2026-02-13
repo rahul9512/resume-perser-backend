@@ -153,7 +153,13 @@ function App() {
                   <p style={{ color: 'var(--text-dim)', marginBottom: '2rem', fontSize: '0.9rem' }}>
                     Proprietary OCR & NLP parsing. Max 25MB per candidate.
                   </p>
-                  <UploadResume onUploadSuccess={(id) => runAnalysis(null, id)} apiUrl={API_BASE_URL} />
+                  <UploadResume
+                    onUploadSuccess={(id) => {
+                      fetchHistory();
+                      runAnalysis(null, id);
+                    }}
+                    apiUrl={API_BASE_URL}
+                  />
                 </div>
                 <div className="glass-panel">
                   <h3 style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
