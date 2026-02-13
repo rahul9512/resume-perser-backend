@@ -243,7 +243,7 @@ function App() {
                   ) : (
                     <div className="glass-panel" style={{ textAlign: 'center', padding: '5rem', opacity: 0.5, borderStyle: 'dashed' }}>
                       <BarChart3 size={48} style={{ marginBottom: '1.5rem', color: 'var(--primary)' }} />
-                      <p>Upload a resume to see matching analysis results.</p>
+                      <p>{currentJobId ? "Target criteria saved! Now upload a resume to see matching analysis results." : "Upload a resume to see matching analysis results."}</p>
                     </div>
                   )}
                 </div>
