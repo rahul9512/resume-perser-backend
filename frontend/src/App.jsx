@@ -278,18 +278,29 @@ function App() {
                         </tr>
                       </thead>
                       <tbody>
-                        {history.map(item => (
-                          <tr key={item.id}>
-                            <td>{item.filename}</td>
-                            <td>{new Date(item.created_at).toLocaleDateString()}</td>
-                            <td style={{ textAlign: 'right' }}>
-                              <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
-                                <button className="btn-secondary btn-sm" onClick={() => runAnalysis(null, item.id)}>Analyze This</button>
-                                <button className="btn-delete" onClick={() => handleDeleteResume(item.id)}><Trash2 size={16} /></button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
+                        {(() => {
+                          const dedupedHistory = [];
+                          const seen = new Set();
+                          [...history].forEach(item => {
+                            const key = item.filename.strip?.()?.toLowerCase() || item.filename.toLowerCase();
+                            if (!seen.has(key)) {
+                              seen.add(key);
+                              dedupedHistory.push(item);
+                            }
+                          });
+                          return dedupedHistory.map(item => (
+                            <tr key={item.id}>
+                              <td>{item.filename}</td>
+                              <td>{new Date(item.created_at).toLocaleDateString()}</td>
+                              <td style={{ textAlign: 'right' }}>
+                                <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+                                  <button className="btn-secondary btn-sm" onClick={() => runAnalysis(null, item.id)}>Analyze This</button>
+                                  <button className="btn-delete" onClick={() => handleDeleteResume(item.id)}><Trash2 size={16} /></button>
+                                </div>
+                              </td>
+                            </tr>
+                          ));
+                        })()}
                       </tbody>
                     </table>
                   ) : (
