@@ -38,23 +38,30 @@ def match_resumes(job_id: str, resume_id: Optional[int] = Query(None), user=Depe
     )
 
     # 4. Enrich results with metadata
-    if results:
-        for res in results:
-            idx = res["resume_index"]
-            res["filename"] = resumes_response.data[idx].get("filename")
-            res["id"] = resumes_response.data[idx].get("id")
-            res["created_at"] = resumes_response.data[idx].get("created_at")
-            res["file_url"] = resumes_response.data[idx].get("file_url")
+    try:
+        if results:
+            for res in results:
+                idx = res["resume_index"]
+                res["filename"] = resumes_response.data[idx].get("filename")
+                res["id"] = resumes_response.data[idx].get("id")
+                res["created_at"] = resumes_response.data[idx].get("created_at")
+                res["file_url"] = resumes_response.data[idx].get("file_url")
 
-        # Save to results table if analyzing all
-        if not resume_id:
-            supabase.table("results").upsert({
-                "job_id": job_id,
-                "results": results,
-                "user_id": user["sub"]
-            }, on_conflict="job_id,user_id").execute()
-
-    return results
+            # Save to results table if analyzing all
+            if not resume_id:
+                print(f"DEBUG: Saving results for job {job_id}")
+                supabase.table("results").upsert({
+                    "job_id": job_id,
+                    "results": results,
+                    "user_id": user["sub"]
+                }, on_conflict="job_id,user_id").execute()
+        
+        return results
+    except Exception as e:
+        print(f"CRITICAL ERROR in match enrichment/save: {e}")
+        # Return what we have or a clear error
+        if results: return results
+        return {"error": str(e)}
 
 
 @router.get("/results/{job_id}")

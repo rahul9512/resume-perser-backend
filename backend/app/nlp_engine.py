@@ -1,5 +1,6 @@
 import spacy
 import re
+import time
 from typing import List, Dict
 
 from nltk.stem import PorterStemmer
@@ -72,19 +73,29 @@ def extract_entities(text: str) -> Dict[str, any]:
     if not text:
         return {"skills": [], "experience": 0, "roles": []}
     
+    start_time = time.time()
+    
     # 1. Full Pipeline: Tokenization, Stop word removal, Lemmatization, Stemming
     features = process_text(text)
-    all_linguistic_variants = set(features["tokens"] + features["lemmas"] + features["stems"])
+    tokens = features["tokens"]
+    all_linguistic_variants = set(tokens + features["lemmas"] + features["stems"])
     
-    # 2. Extract Skills with Fuzzy Matching (Levenshtein)
+    # 2. Extract Skills with Optimized Fuzzy Matching
     found_skills = []
+    # Pre-calculate token sets for faster lookups
+    token_set = set(tokens)
+    
     for skill in SKILLS_DB:
+        # direct fast match
         if skill in all_linguistic_variants:
             found_skills.append(skill)
             continue
             
+        # fuzzy match only if necessary and skill is long enough
         if len(skill) > 4:
-            for token in features["tokens"]:
+            # Only check tokens of similar length to the skill to reduce search space
+            potential_matches = [t for t in tokens if abs(len(t) - len(skill)) <= 1]
+            for token in potential_matches:
                 if len(token) > 4 and levenshtein_distance(skill, token) <= 1:
                     found_skills.append(skill)
                     break
@@ -99,6 +110,9 @@ def extract_entities(text: str) -> Dict[str, any]:
     for pattern in role_patterns:
         matches = re.findall(pattern, text)
         roles.extend(matches)
+
+    duration = time.time() - start_time
+    print(f"DEBUG: extract_entities took {duration:.4f}s for {len(text)} chars")
 
     return {
         "skills": list(set(found_skills)),

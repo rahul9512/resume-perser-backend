@@ -28,12 +28,7 @@ console.log("🚀 LATEST BUILD - Using API:", getApiUrl());
 
 const API_BASE_URL = getApiUrl();
 
-// MANDATORY ALERT TO CONFIRM DEPLOYMENT
-if (window.location.hostname.includes("vercel.app")) {
-  alert("Vercel: Connecting to Render at " + API_BASE_URL);
-}
-
-// Loud alert to confirm update
+// PROD MODE LOGGING
 if (window.location.hostname.includes("vercel.app")) {
   console.log("🔥 PROD MODE ENABLED:", API_BASE_URL);
 }
@@ -130,6 +125,12 @@ function App() {
         method: 'POST',
         headers: { Authorization: `Bearer ${session.access_token}` }
       });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.message || errData.error || `Server error: ${res.status}`);
+      }
+
       const data = await res.json();
 
       if (resumeId) {
@@ -144,9 +145,11 @@ function App() {
 
       fetchHistory(); // Sync history
     } catch (e) {
-      console.error(e);
+      console.error("Matching Error:", e);
+      alert("Analysis failed: " + e.message);
+    } finally {
+      setAnalyzing(false);
     }
-    setAnalyzing(false);
   }, [currentJobId]);
 
   return (
