@@ -9,11 +9,14 @@ router = APIRouter()
 @router.post("/match-resumes")
 def match_resumes(job_id: str, resume_id: Optional[int] = Query(None), user=Depends(verify_jwt)):
     # 1. Fetch job details
+    print(f"DEBUG: Starting match request for job_id: {job_id}")
     job_response = supabase.table("jobs").select("*").eq("job_id", job_id).execute()
     if not job_response.data:
+         print(f"WARNING: Job {job_id} not found in database.")
          return {"error": "Job not found"} 
     
     job_data = job_response.data[0]
+    print(f"DEBUG: Found job: {job_data.get('job_id')}")
 
     # 2. Fetch resumes (Either one specific or all for user)
     query = supabase.table("resumes").select("*").eq("user_id", user["sub"])
@@ -23,9 +26,11 @@ def match_resumes(job_id: str, resume_id: Optional[int] = Query(None), user=Depe
     resumes_response = query.execute()
     
     if not resumes_response.data:
+         print(f"WARNING: No resumes found for user {user['sub']}")
          return {"message": "No resumes found to match against."}
 
     resume_contents = [r["content"] for r in resumes_response.data if r.get("content")]
+    print(f"DEBUG: Found {len(resume_contents)} resumes with content out of {len(resumes_response.data)}")
     
     if not resume_contents:
         return {"message": "Selected resumes have no text content."}

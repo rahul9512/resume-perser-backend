@@ -5,11 +5,14 @@ from typing import List, Dict
 
 from nltk.stem import PorterStemmer
 
-# Load English tokenizer, tagger, parser and NER
+# Load English tokenizer, tagger and lemmatizer only (disable heavy components)
 try:
-    nlp = spacy.load("en_core_web_sm")
+    # Disable parser and ner to save time/memory as we only need tokenization, tagging, and lemmatization
+    nlp = spacy.load("en_core_web_sm", disable=["parser", "ner"])
+    print("DEBUG: Spacy model loaded (minimal components)")
 except:
     # Fallback if model not downloaded
+    print("WARNING: Spacy model not found, falling back to basic split")
     nlp = None
 
 stemmer = PorterStemmer()

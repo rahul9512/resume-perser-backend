@@ -123,12 +123,16 @@ function App() {
 
       const res = await fetch(url.toString(), {
         method: 'POST',
-        headers: { Authorization: `Bearer ${session.access_token}` }
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({})
       });
 
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.message || errData.error || `Server error: ${res.status}`);
+        throw new Error(errData.message || errData.error || `Server status ${res.status}`);
       }
 
       const data = await res.json();
@@ -145,8 +149,8 @@ function App() {
 
       fetchHistory(); // Sync history
     } catch (e) {
-      console.error("Matching Error:", e);
-      alert("Analysis failed: " + e.message);
+      console.error("Matching Error Details:", e);
+      alert(`Analysis failed!\nURL: ${API_BASE_URL}/match-resumes\nError: ${e.message}`);
     } finally {
       setAnalyzing(false);
     }

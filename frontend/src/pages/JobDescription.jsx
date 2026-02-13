@@ -43,9 +43,15 @@ export default function JobDescription({ onAnalysisStarted, apiUrl }) {
         })
       });
 
-      if (onAnalysisStarted) onAnalysisStarted(jobId);
+      if (res.ok) {
+        if (onAnalysisStarted) onAnalysisStarted(jobId);
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        alert("Error saving job: " + (errData.detail || "Unknown error"));
+      }
     } catch (err) {
-      alert("Error saving: " + err.message);
+      console.error("Save Job Error:", err);
+      alert("Network Error saving job: " + err.message);
     }
     setLoading(false);
   };
