@@ -7,7 +7,7 @@ from typing import Optional
 router = APIRouter()
 
 @router.post("/match-resumes")
-def match_resumes(job_id: str, resume_id: Optional[str] = Query(None), user=Depends(verify_jwt)):
+def match_resumes(job_id: str = Query(...), resume_id: Optional[str] = Query(None), user=Depends(verify_jwt)):
     # 1. Fetch job details
     print(f"DEBUG: Starting match request for job_id: {job_id}")
     job_response = supabase.table("jobs").select("*").eq("job_id", job_id).execute()

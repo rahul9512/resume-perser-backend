@@ -87,7 +87,14 @@ async def upload_resume(
                 "content": text,
                 "file_url": file_url
             }).execute()
-            resume_id = insert_res.data[0]["id"]
+            
+            if insert_res.data:
+                resume_id = insert_res.data[0]["id"]
+            else:
+                # Fallback check
+                existing_retry = supabase.table("resumes").select("id").eq("user_id", user["sub"]).eq("filename", clean_name).execute()
+                resume_id = existing_retry.data[0]["id"] if existing_retry.data else None
+                
             status_msg = "Resume uploaded and saved successfully"
         
         print("DEBUG: Database operation successful.")
