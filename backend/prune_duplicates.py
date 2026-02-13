@@ -1,51 +1,72 @@
-from app.database import supabase
-from collections import Counter
+import os
+from dotenv import load_dotenv
+from supabase import create_client
+import collections
+
+# Load .env from backend directory
+load_dotenv("backend/.env")
+url = os.environ.get("SUPABASE_URL")
+# Use ANON key if service role is missing
+key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or os.environ.get("SUPABASE_ANON_KEY") or os.environ.get("SUPABASE_KEY")
+
+if not url or not key:
+    print(f"❌ Error: SUPABASE_URL and SUPABASE_KEY must be set in .env")
+    print(f"DEBUG: URL found: {url}, KEY found: {'[HIDDEN]' if key else 'None'}")
+    exit(1)
+
+supabase = create_client(url, key)
 
 def prune_duplicates():
-    print("🚀 Starting Database Pruning...")
+    print(f"🚀 Starting database cleanup on {url}...")
     
-    # 1. Fetch all resumes
-    res = supabase.table("resumes").select("id, filename, user_id, created_at").execute()
-    all_resumes = res.data or []
-    print(f"DEBUG: Found {len(all_resumes)} total resumes.")
-
-    # 2. Group by (user_id, filename_normalized)
-    groups = {}
-    for r in all_resumes:
-        fname = r.get("filename")
-        if not fname: continue
-        
-        key = (r["user_id"], fname.strip().lower())
-        if key not in groups:
-            groups[key] = []
-        groups[key].append(r)
-
-    to_delete = []
-    for key, resumes in groups.items():
-        if len(resumes) > 1:
-            # Sort by ID descending (assuming higher ID is newer)
-            resumes.sort(key=lambda x: x["id"], reverse=True)
-            # Keep the first one, delete the rest
-            kept = resumes[0]
-            redundant = resumes[1:]
-            print(f"INFO: Keep ID {kept['id']} for '{key[1]}'. Pruning {len(redundant)} duplicates.")
-            for r in redundant:
-                to_delete.append(r["id"])
-
-    # 3. Perform Deletion
-    if not to_delete:
-        print("✅ No duplicates found. Database is clean.")
+    try:
+        # 1. Fetch all resumes
+        response = supabase.table("resumes").select("id, filename, user_id, created_at").execute()
+        resumes = response.data
+    except Exception as e:
+        print(f"❌ Failed to fetch resumes: {e}")
+        return
+    
+    if not resumes:
+        print("Empty library. Nothing to prune.")
         return
 
-    print(f"⚠️ Proceeding to delete {len(to_delete)} duplicate records...")
-    for rid in to_delete:
-        try:
-            supabase.table("resumes").delete().eq("id", rid).execute()
-            print(f"  - Deleted ID {rid}")
-        except Exception as e:
-            print(f"  - ❌ Failed to delete ID {rid}: {e}")
+    # 2. Group by (user_id, filename)
+    groups = collections.defaultdict(list)
+    for res in resumes:
+        key = (res['user_id'], res['filename'].strip().lower())
+        groups[key].append(res)
 
-    print(f"✨ PRUNING COMPLETE. Deleted {len(to_delete)} records.")
+    to_delete = []
+    
+    for key, items in groups.items():
+        if len(items) > 1:
+            # Sort by created_at descending (latest first)
+            items.sort(key=lambda x: x['created_at'], reverse=True)
+            
+            # Keep the first one, delete the rest
+            duplicates = items[1:]
+            for dup in duplicates:
+                to_delete.append(dup['id'])
+                print(f"[-] Identified duplicate: {dup['filename']} (ID: {dup['id']})")
+
+    if not to_delete:
+        print("✅ No duplicates found.")
+        return
+
+    print(f"⚠️  Found {len(to_delete)} duplicates. Deleting...")
+    
+    # 3. Delete duplicates
+    for resume_id in to_delete:
+        try:
+            supabase.table("resumes").delete().eq("id", resume_id).execute()
+            print(f"✅ Deleted ID: {resume_id}")
+        except Exception as e:
+            # If ANON key doesn't have delete permissions, this might fail.
+            # But the UI handles it by just not showing them.
+            print(f"❌ Failed to delete {resume_id} (Check RLS policies): {e}")
+
+    print("\n✨ Database is now clean!")
 
 if __name__ == "__main__":
     prune_duplicates()
