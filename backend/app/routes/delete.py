@@ -5,7 +5,7 @@ from app.database import supabase
 router = APIRouter()
 
 @router.delete("/resume/{resume_id}")
-async def delete_resume(resume_id: int, user=Depends(verify_jwt)):
+async def delete_resume(resume_id: str, user=Depends(verify_jwt)):
     # 1. Fetch resume to get the storage path
     resume_res = supabase.table("resumes").select("*").eq("id", resume_id).eq("user_id", user["sub"]).execute()
     

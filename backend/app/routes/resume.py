@@ -81,19 +81,20 @@ async def upload_resume(
             }).eq("id", resume_id).execute()
             status_msg = "Resume updated successfully"
         else:
-            print("DEBUG: Inserting new record into 'resumes' table...")
-            supabase.table("resumes").insert({
+            insert_res = supabase.table("resumes").insert({
                 "user_id": user["sub"],
                 "filename": clean_name,
                 "content": text,
                 "file_url": file_url
             }).execute()
+            resume_id = insert_res.data[0]["id"]
             status_msg = "Resume uploaded and saved successfully"
         
         print("DEBUG: Database operation successful.")
 
         return {
             "status": status_msg,
+            "id": resume_id,
             "file_url": file_url
         }
 
