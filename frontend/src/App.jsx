@@ -4,7 +4,7 @@ import { supabase } from "./supabaseClient";
 import Auth from "./pages/Auth";
 import UploadResume from "./pages/UploadResume";
 import JobDescription from "./pages/JobDescription";
-import { Trash2, History, RefreshCcw, Eye, EyeOff, BarChart3, ShieldCheck, Zap } from "lucide-react";
+import { Trash2, RefreshCcw, BarChart3, ShieldCheck, Zap } from "lucide-react";
 import "./App.css";
 
 // --- CONFIGURATION ---
@@ -38,7 +38,6 @@ function App() {
   const [history, setHistory] = useState([]);
   const [analyzing, setAnalyzing] = useState(false);
   const [currentJobId, setCurrentJobId] = useState(null);
-  const [showProcessed, setShowProcessed] = useState(false); // HR View Toggle
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -79,10 +78,10 @@ function App() {
     const targetJobId = jobId || currentJobId;
     if (!targetJobId) return;
 
-    // If no specific resume is provided (JD change), clear the dashboard
     if (!resumeId) {
       setResults([]);
       setCurrentJobId(targetJobId);
+      // alert("Target criteria saved! Ready for resume upload.");
       return;
     }
 
@@ -159,7 +158,7 @@ function App() {
                   <p style={{ color: 'var(--text-dim)', marginBottom: '2rem', fontSize: '0.9rem' }}>
                     Define the core skills and experience for the matching engine.
                   </p>
-                  <JobDescription onAnalysisStarted={(id) => { setCurrentJobId(id); setResults([]); }} apiUrl={API_BASE_URL} />
+                  <JobDescription onAnalysisStarted={(id) => runAnalysis(id)} apiUrl={API_BASE_URL} />
                 </div>
               </div>
 

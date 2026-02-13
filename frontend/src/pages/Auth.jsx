@@ -51,7 +51,7 @@ export default function Auth() {
           }}>
             <ShieldCheck size={36} color="white" />
           </div>
-          <h2 style={{ fontSize: "2.2rem", marginBottom: "0.5rem" }}>{isLogin ? "Welcome Back" : "Join Spectral"}</h2>
+          <h2 style={{ fontSize: "2.2rem", marginBottom: "0.5rem" }}>{isLogin ? "Welcome Back" : "Join AI Parser"}</h2>
           <p style={{ color: "var(--text-muted)", fontSize: '1rem' }}>{isLogin ? "Enter your email for access" : "Create an account for resume analysis"}</p>
         </div>
 
@@ -103,8 +103,8 @@ export default function Auth() {
         </div>
 
         <div style={{ marginTop: '3rem', textAlign: 'center', opacity: 0.5 }}>
-          <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', letterSpacing: '0.5px' }}>
-            Powered by Spectral AI Engine • 2026
+          <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", letterSpacing: "0.5px" }}>
+            Powered by Resume Parser AI Engine • 2026
           </p>
         </div>
       </div>
