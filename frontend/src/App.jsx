@@ -78,10 +78,14 @@ function App() {
     const targetJobId = jobId || currentJobId;
     if (!targetJobId) return;
 
-    if (!resumeId) {
+    let finalResumeId = resumeId;
+    if (!finalResumeId && history.length > 0) {
+      finalResumeId = history[0].id;
+    }
+
+    if (!finalResumeId) {
       setResults([]);
       setCurrentJobId(targetJobId);
-      // alert("Target criteria saved! Ready for resume upload.");
       return;
     }
 
