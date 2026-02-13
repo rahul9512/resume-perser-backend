@@ -4,47 +4,30 @@ import { supabase } from "./supabaseClient";
 import Auth from "./pages/Auth";
 import UploadResume from "./pages/UploadResume";
 import JobDescription from "./pages/JobDescription";
-import { Trash2, History, RefreshCcw, CheckSquare, Square } from "lucide-react";
+import { Trash2, History, RefreshCcw, Eye, EyeOff, BarChart3, ShieldCheck, Zap } from "lucide-react";
 import "./App.css";
 
 // --- CONFIGURATION ---
-// If Vercel settings are tricky, you can paste your Render URL here:
 const RENDER_BACKEND_URL = "https://resume-perser-backend-2.onrender.com";
 
 const getApiUrl = () => {
-  // If we are on Vercel, ALWAYS force the Render URL as the first priority
-  if (window.location.hostname.includes("vercel.app")) {
-    return RENDER_BACKEND_URL;
-  }
-
+  if (window.location.hostname.includes("vercel.app")) return RENDER_BACKEND_URL;
   const envUrl = import.meta.env.VITE_API_URL;
-  if (envUrl && !envUrl.includes("127.0.0.1") && !envUrl.includes("localhost")) {
-    return envUrl;
-  }
+  if (envUrl && !envUrl.includes("127.0.0.1") && !envUrl.includes("localhost")) return envUrl;
   return "http://127.0.0.1:8000";
 };
 
-console.log("🚀 LATEST BUILD - Using API:", getApiUrl());
-
 const API_BASE_URL = getApiUrl();
 
-// PROD MODE LOGGING
-if (window.location.hostname.includes("vercel.app")) {
-  console.log("🔥 PROD MODE ENABLED:", API_BASE_URL);
-}
-
-// Protected Route Component
 const ProtectedRoute = ({ session, loading, children }) => {
   if (loading) return (
     <div className="page-container">
-      <div className="animate-float">
-        <h2 style={{ color: 'white' }}>Loading...</h2>
+      <div className="animate-pulse-slow">
+        <h2 style={{ color: 'white', letterSpacing: '0.2em' }}>INITIALIZING PULSE V2.0...</h2>
       </div>
     </div>
   );
-
   if (!session) return <Navigate to="/login" />;
-
   return children;
 };
 
@@ -55,9 +38,9 @@ function App() {
   const [history, setHistory] = useState([]);
   const [analyzing, setAnalyzing] = useState(false);
   const [currentJobId, setCurrentJobId] = useState(null);
+  const [showProcessed, setShowProcessed] = useState(false); // HR View Toggle
 
   useEffect(() => {
-    console.log("Using API URL:", API_BASE_URL);
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setLoading(false);
@@ -69,53 +52,35 @@ function App() {
       setLoading(false);
       if (session) fetchHistory();
     });
-
     return () => subscription.unsubscribe();
   }, []);
 
   const fetchHistory = async () => {
-    const { data, error } = await supabase
-      .table("resumes")
-      .select("id, filename, file_url, created_at")
-      .order("created_at", { ascending: false });
-
+    const { data } = await supabase.table("resumes").select("*").order("created_at", { ascending: false });
     if (data) setHistory(data);
   };
 
   const handleDeleteResume = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this resume?")) return;
-
+    if (!window.confirm("Permanent delete? This cannot be undone.")) return;
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const res = await fetch(`${API_BASE_URL}/resume/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${session.access_token}` }
       });
-
       if (res.ok) {
         setHistory(prev => prev.filter(item => item.id !== id));
         setResults(prev => prev.filter(item => item.id !== id));
-      } else {
-        const errData = await res.json();
-        alert("Delete failed: " + (errData.detail || "Unknown error"));
       }
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
+    } catch (e) { console.error(e); }
   };
 
   const runAnalysis = useCallback(async (jobId, resumeId = null) => {
     const targetJobId = jobId || currentJobId;
     if (!targetJobId) return;
-
     setAnalyzing(true);
     setCurrentJobId(targetJobId);
     const { data: { session } } = await supabase.auth.getSession();
-
     try {
       const url = new URL(`${API_BASE_URL}/match-resumes`);
       url.searchParams.append("job_id", targetJobId);
@@ -129,16 +94,8 @@ function App() {
         },
         body: JSON.stringify({})
       });
-
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.message || errData.error || `Server status ${res.status}`);
-      }
-
       const data = await res.json();
-
       if (resumeId) {
-        // Append or replace the individual result in the current results list
         setResults(prev => {
           const others = prev.filter(r => r.id !== data[0]?.id);
           return [...data, ...others];
@@ -146,11 +103,10 @@ function App() {
       } else {
         setResults(data);
       }
-
-      fetchHistory(); // Sync history
+      fetchHistory();
     } catch (e) {
-      console.error("Matching Error Details:", e);
-      alert(`Analysis failed!\nURL: ${API_BASE_URL}/match-resumes\nError: ${e.message}`);
+      console.error(e);
+      alert("Analysis engine encountered an error.");
     } finally {
       setAnalyzing(false);
     }
@@ -158,66 +114,77 @@ function App() {
 
   return (
     <BrowserRouter>
+      <div className="bg-canvas"></div>
       <div className="bg-blob blob-1"></div>
       <div className="bg-blob blob-2"></div>
       <div className="bg-blob blob-3"></div>
 
       <div className="app-container">
-        <nav style={{ padding: '1.5rem 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-          <h1 style={{
-            fontSize: '1.75rem',
-            margin: 0,
-            background: 'linear-gradient(135deg, var(--primary), var(--secondary), var(--accent))',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            fontWeight: 800
-          }}>
-            Resume AI <span style={{ fontSize: '0.7rem', opacity: 0.5, border: '1px solid', padding: '2px 6px', borderRadius: '4px', verticalAlign: 'middle' }}>v2.0 PROD</span>
-          </h1>
+        <header className="dashboard-header animate-slide-up">
+          <div className="brand-title">
+            <BarChart3 size={32} />
+            PULSE <span className="brand-badge">Engine v2.0</span>
+          </div>
           {session && (
-            <button onClick={handleLogout} className="btn-secondary">Logout</button>
+            <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
+              <div className="status-indicator">
+                <span className="dot pulse"></span> <span style={{ opacity: 0.8 }}>SYSTEM LIVE</span>
+              </div>
+              <button onClick={() => supabase.auth.signOut()} className="btn-secondary">Logout</button>
+            </div>
           )}
-        </nav>
+        </header>
 
         <Routes>
           <Route path="/login" element={session ? <Navigate to="/" /> : <Auth />} />
           <Route path="/" element={
             <ProtectedRoute session={session} loading={loading}>
               <div className="dashboard-grid animate-fade-in">
-                <div className="glass-panel card">
-                  <h2 style={{ fontSize: '1.75rem', display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '2rem' }}>
-                    <span className="icon-box">📄</span> Upload Resume
-                  </h2>
+                <div className="glass-panel">
+                  <h3 style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <Zap size={24} color="var(--primary)" /> Smart Upload
+                  </h3>
+                  <p style={{ color: 'var(--text-dim)', marginBottom: '2rem', fontSize: '0.9rem' }}>
+                    Proprietary OCR & NLP parsing. Max 25MB per candidate.
+                  </p>
                   <UploadResume onUploadSuccess={(id) => runAnalysis(null, id)} apiUrl={API_BASE_URL} />
                 </div>
-                <div className="glass-panel card">
-                  <h2 style={{ fontSize: '1.75rem', display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '2rem' }}>
-                    <span className="icon-box" style={{ background: 'var(--accent)' }}>💼</span> Job Details
-                  </h2>
+                <div className="glass-panel">
+                  <h3 style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <ShieldCheck size={24} color="var(--secondary)" /> Target Criteria
+                  </h3>
+                  <p style={{ color: 'var(--text-dim)', marginBottom: '2rem', fontSize: '0.9rem' }}>
+                    Define the core skills and experience for the matching engine.
+                  </p>
                   <JobDescription onAnalysisStarted={(id) => runAnalysis(id)} apiUrl={API_BASE_URL} />
                 </div>
               </div>
 
-              {/* Ranking Results Section */}
-              <div style={{ marginTop: '3rem' }} className="animate-fade-in">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-                  <h2 style={{ fontSize: '2rem', display: 'flex', alignItems: 'center', gap: '1rem', margin: 0 }}>
-                    Ranked Candidates {analyzing && <span className="animate-pulse" style={{ fontSize: '1rem', color: 'var(--primary)' }}>Analyzing...</span>}
-                  </h2>
+              {/* Candidates Ranking Results */}
+              <section className="results-section animate-slide-up">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '3rem' }}>
+                  <div>
+                    <h2 style={{ marginBottom: '0.5rem' }}>Top Matches</h2>
+                    <p style={{ color: 'var(--text-dim)' }}>Ranked by AI weighted scoring algorithm</p>
+                  </div>
                   {currentJobId && (
                     <button className="btn-secondary" onClick={() => runAnalysis(currentJobId)} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <RefreshCcw size={16} /> Re-analyze All
+                      <RefreshCcw size={18} className={analyzing ? "animate-spin" : ""} /> {analyzing ? "Ranking..." : "Refresh Scores"}
                     </button>
                   )}
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                   {results.length > 0 ? results.map((res, i) => (
-                    <div key={res.id || i} className="glass-panel animate-slide-up candidate-card" style={{ borderLeft: `6px solid ${res.eligibility === 'Eligible' ? '#10b981' : '#ef4444'}` }}>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
-                          <h3 style={{ fontSize: '1.5rem', margin: 0, fontWeight: 700 }}>{res.filename || `Candidate #${i + 1}`}</h3>
-                          <span className={`badge ${res.eligibility === 'Eligible' ? 'eligible' : 'not-eligible'}`}>
+                    <div key={res.id || i} className={`glass-panel candidate-card animate-slide-up ${res.eligibility === 'Eligible' ? 'eligible' : 'not-eligible'}`} style={{ animationDelay: `${i * 0.1}s` }}>
+                      <div className="card-content">
+                        <div className="card-header">
+                          <h4 className="candidate-name">{res.filename || `Candidate #${i + 1}`}</h4>
+                          <span className={`status-badge ${res.eligibility === 'Eligible' ? 'eligible' : 'not-eligible'}`} style={{
+                            background: res.eligibility === 'Eligible' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(244, 63, 94, 0.1)',
+                            color: res.eligibility === 'Eligible' ? '#34d399' : '#fb7185',
+                            border: `1px solid ${res.eligibility === 'Eligible' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(244, 63, 94, 0.2)'}`
+                          }}>
                             {res.eligibility}
                           </span>
                         </div>
@@ -230,11 +197,11 @@ function App() {
 
                         <div className="card-stats">
                           <div className="stat-item">
-                            <span className="stat-label">Experience</span>
+                            <span className="stat-label">EXP. GAP</span>
                             <span className="stat-value">{res.details?.years_of_experience || 0} Years</span>
                           </div>
-                          <div className="stat-item">
-                            <span className="stat-label">Role Similarity</span>
+                          <div className="stat-item" style={{ borderLeft: '1px solid rgba(255,255,255,0.05)', paddingLeft: '1.5rem' }}>
+                            <span className="stat-label">ALIGNMENT</span>
                             <span className="stat-value">{Math.round(res.details?.role_similarity) || 0}%</span>
                           </div>
                         </div>
@@ -251,143 +218,120 @@ function App() {
                             <span className="score-percent">%</span>
                           </div>
                         </div>
-                        <p className="score-label">Match Score</p>
+                        <p className="score-label">MATCH SCORE</p>
                       </div>
                     </div>
                   )) : (
-                    <div className="glass-panel card" style={{ textAlign: 'center', padding: '4rem', opacity: 0.5 }}>
-                      <p>Start an analysis to browse top matches.</p>
+                    <div className="glass-panel" style={{ textAlign: 'center', padding: '5rem', opacity: 0.5, borderStyle: 'dashed' }}>
+                      <BarChart3 size={48} style={{ marginBottom: '1.5rem', color: 'var(--primary)' }} />
+                      <p>Run analysis to generate candidate ranking reports.</p>
                     </div>
                   )}
                 </div>
-              </div>
+              </section>
 
-              {/* Resume Library/History Section */}
-              <div style={{ marginTop: '5rem', marginBottom: '4rem' }} className="animate-fade-in">
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2.5rem' }}>
-                  <h2 style={{ fontSize: '2.25rem', margin: 0, display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <History size={36} color="var(--primary)" /> Resume Library
+              {/* Resume Library with HR View Toggle */}
+              <section className="library-section animate-fade-in">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem' }}>
+                  <h2 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <History size={32} color="var(--primary)" /> Workforce Library
                   </h2>
-                  <div className="status-indicator">
-                    <span className="dot pulse"></span> Connected to Pulse DB
+
+                  <div className="hr-toggle-container">
+                    <span className="hr-toggle-label">HR GATEWAY</span>
+                    <button
+                      className={`btn-hr-view ${showProcessed ? 'active' : ''}`}
+                      onClick={() => setShowProcessed(!showProcessed)}
+                    >
+                      {showProcessed ? (
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Eye size={16} /> SHOWING ALL</span>
+                      ) : (
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><EyeOff size={16} /> VIEW PROCESSED</span>
+                      )}
+                    </button>
                   </div>
                 </div>
 
                 {history.length > 0 ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem' }}>
-                    {/* 1. Pending Section */}
-                    {(() => {
-                      const processedIds = new Set(results.map(r => r.id));
-                      const dedupedHistory = [];
-                      const seen = new Set();
+                  <div className="glass-panel" style={{ padding: '0', overflow: 'hidden' }}>
+                    <table className="history-table">
+                      <thead>
+                        <tr>
+                          <th>CANDIDATE / SOURCE FILE</th>
+                          <th>SYNC STATUS</th>
+                          <th>TIMESTAMP</th>
+                          <th style={{ textAlign: 'right' }}>CONTROL</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(() => {
+                          const processedIds = new Set(results.map(r => r.id));
+                          const dedupedHistory = [];
+                          const seen = new Set();
 
-                      [...history].forEach(item => {
-                        const key = item.filename.trim().toLowerCase();
-                        if (!seen.has(key)) {
-                          seen.add(key);
-                          dedupedHistory.push(item);
-                        }
-                      });
+                          [...history].forEach(item => {
+                            const key = item.filename.trim().toLowerCase();
+                            if (!seen.has(key)) {
+                              seen.add(key);
+                              dedupedHistory.push(item);
+                            }
+                          });
 
-                      const pending = dedupedHistory.filter(h => !processedIds.has(h.id));
-                      const processed = dedupedHistory.filter(h => processedIds.has(h.id));
+                          // FILTER BASED ON TOGGLE
+                          const displayed = showProcessed
+                            ? dedupedHistory
+                            : dedupedHistory.filter(h => !processedIds.has(h.id));
 
-                      return (
-                        <>
-                          <div className="library-section">
-                            <div className="section-header">
-                              <h3 className="section-title">Ready for Analysis</h3>
-                              <span className="section-count">{pending.length} Resumes</span>
-                            </div>
+                          if (displayed.length === 0) {
+                            return (
+                              <tr>
+                                <td colSpan="4" className="empty-state">
+                                  {showProcessed ? "No records found." : "All candidates currently analyzed. Enable HR Gateway for full history."}
+                                </td>
+                              </tr>
+                            );
+                          }
 
-                            <div className="glass-panel" style={{ padding: '0', overflow: 'hidden' }}>
-                              {pending.length > 0 ? (
-                                <table className="history-table">
-                                  <thead>
-                                    <tr>
-                                      <th>Candidate / File</th>
-                                      <th>Status</th>
-                                      <th>Added on</th>
-                                      <th style={{ textAlign: 'right' }}>Actions</th>
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    {pending.map(item => {
-                                      const isNew = (new Date() - new Date(item.created_at)) < (24 * 60 * 60 * 1000);
-                                      return (
-                                        <tr key={item.id} className="pending-row">
-                                          <td style={{ fontWeight: 600 }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                              {item.filename}
-                                              {isNew && <span className="mini-badge-new">NEW</span>}
-                                            </div>
-                                          </td>
-                                          <td><span className="status-tag pending">Pending Match</span></td>
-                                          <td style={{ opacity: 0.7 }}>{new Date(item.created_at).toLocaleDateString()}</td>
-                                          <td style={{ textAlign: 'right' }}>
-                                            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
-                                              <button className="btn-primary btn-sm" onClick={() => runAnalysis(null, item.id)}>Analyze Candidate</button>
-                                              <button className="btn-delete" onClick={() => handleDeleteResume(item.id)}><Trash2 size={16} /></button>
-                                            </div>
-                                          </td>
-                                        </tr>
-                                      );
-                                    })}
-                                  </tbody>
-                                </table>
-                              ) : (
-                                <div className="empty-state">No pending resumes. All files have been analyzed!</div>
-                              )}
-                            </div>
-                          </div>
-
-                          <div className="library-section">
-                            <div className="section-header">
-                              <h3 className="section-title">Already Processed</h3>
-                              <span className="section-count">{processed.length} Resumes</span>
-                            </div>
-                            <div className="glass-panel" style={{ padding: '0', overflow: 'hidden', opacity: 0.85 }}>
-                              {processed.length > 0 ? (
-                                <table className="history-table">
-                                  <thead>
-                                    <tr>
-                                      <th>Candidate / File</th>
-                                      <th>Status</th>
-                                      <th>Added on</th>
-                                      <th style={{ textAlign: 'right' }}>Actions</th>
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    {processed.map(item => (
-                                      <tr key={item.id} className="processed-row">
-                                        <td style={{ opacity: 0.8 }}>{item.filename}</td>
-                                        <td><span className="status-tag processed">✓ Synced</span></td>
-                                        <td style={{ opacity: 0.6 }}>{new Date(item.created_at).toLocaleDateString()}</td>
-                                        <td style={{ textAlign: 'right' }}>
-                                          <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
-                                            <button className="btn-secondary btn-sm" onClick={() => runAnalysis(null, item.id)}>Refresh Analysis</button>
-                                            <button className="btn-delete" onClick={() => handleDeleteResume(item.id)}><Trash2 size={16} /></button>
-                                          </div>
-                                        </td>
-                                      </tr>
-                                    ))}
-                                  </tbody>
-                                </table>
-                              ) : (
-                                <div className="empty-state">No processed resumes yet. Run an analysis to see results.</div>
-                              )}
-                            </div>
-                          </div>
-                        </>
-                      );
-                    })()}
+                          return displayed.map(item => {
+                            const isProcessed = processedIds.has(item.id);
+                            const isNew = (new Date() - new Date(item.created_at)) < (24 * 60 * 60 * 1000);
+                            return (
+                              <tr key={item.id} style={{ opacity: isProcessed ? 0.6 : 1 }}>
+                                <td>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontWeight: 600 }}>
+                                    {item.filename}
+                                    {!isProcessed && isNew && <span className="badge-new">NEW</span>}
+                                  </div>
+                                </td>
+                                <td>
+                                  <span className={`status-tag ${isProcessed ? 'processed' : 'pending'}`}>
+                                    {isProcessed ? "✓ ANALYZED" : "● PENDING"}
+                                  </span>
+                                </td>
+                                <td style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                                  {new Date(item.created_at).toLocaleDateString()}
+                                </td>
+                                <td style={{ textAlign: 'right' }}>
+                                  <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+                                    {!isProcessed && (
+                                      <button className="btn-primary" style={{ padding: '8px 16px', fontSize: '0.8rem', width: 'auto' }} onClick={() => runAnalysis(null, item.id)}>Analyze</button>
+                                    )}
+                                    <button className="btn-secondary" style={{ padding: '8px', color: '#ff4444' }} onClick={() => handleDeleteResume(item.id)}><Trash2 size={16} /></button>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          });
+                        })()}
+                      </tbody>
+                    </table>
                   </div>
                 ) : (
-                  <div className="glass-panel card animate-pulse" style={{ padding: '4rem', textAlign: 'center', opacity: 0.5 }}>
-                    <p style={{ fontSize: '1.2rem' }}>Your resume library is empty. Upload your first PDF to begin.</p>
+                  <div className="glass-panel" style={{ padding: '4rem', textAlign: 'center', opacity: 0.5 }}>
+                    <p>Workforce library is currently empty.</p>
                   </div>
                 )}
-              </div>
+              </section>
             </ProtectedRoute>
           } />
         </Routes>
