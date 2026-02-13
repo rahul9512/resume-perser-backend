@@ -78,13 +78,21 @@ function App() {
   const runAnalysis = useCallback(async (jobId, resumeId = null) => {
     const targetJobId = jobId || currentJobId;
     if (!targetJobId) return;
+
+    // If no specific resume is provided (JD change), clear the dashboard
+    if (!resumeId) {
+      setResults([]);
+      setCurrentJobId(targetJobId);
+      return;
+    }
+
     setAnalyzing(true);
     setCurrentJobId(targetJobId);
     const { data: { session } } = await supabase.auth.getSession();
     try {
       const url = new URL(`${API_BASE_URL}/match-resumes`);
       url.searchParams.append("job_id", targetJobId);
-      if (resumeId) url.searchParams.append("resume_id", resumeId);
+      url.searchParams.append("resume_id", resumeId); // Always pass resume_id to ensure single focus
 
       const res = await fetch(url.toString(), {
         method: 'POST',
@@ -95,14 +103,9 @@ function App() {
         body: JSON.stringify({})
       });
       const data = await res.json();
-      if (resumeId) {
-        setResults(prev => {
-          const others = prev.filter(r => r.id !== data[0]?.id);
-          return [...data, ...others];
-        });
-      } else {
-        setResults(data);
-      }
+
+      // Only show this specific result
+      setResults(data);
       fetchHistory();
     } catch (e) {
       console.error(e);
@@ -156,110 +159,11 @@ function App() {
                   <p style={{ color: 'var(--text-dim)', marginBottom: '2rem', fontSize: '0.9rem' }}>
                     Define the core skills and experience for the matching engine.
                   </p>
-                  <JobDescription onAnalysisStarted={(id) => runAnalysis(id)} apiUrl={API_BASE_URL} />
+                  <JobDescription onAnalysisStarted={(id) => { setCurrentJobId(id); setResults([]); }} apiUrl={API_BASE_URL} />
                 </div>
               </div>
 
-              {/* Workforce Library (Hidden by default, toggle via HR Gateway) */}
-              {showProcessed && (
-                <section className="library-section animate-fade-in" style={{ marginTop: '5rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem' }}>
-                    <h2 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                      <History size={32} color="var(--primary)" /> Workforce Library
-                    </h2>
 
-                    <div className="hr-toggle-container">
-                      <span className="hr-toggle-label">HR GATEWAY</span>
-                      <button
-                        className={`btn-hr-view ${showProcessed ? 'active' : ''}`}
-                        onClick={() => setShowProcessed(!showProcessed)}
-                      >
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Eye size={16} /> SHOWING ALL</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  {history.length > 0 ? (
-                    <div className="glass-panel" style={{ padding: '0', overflow: 'hidden' }}>
-                      <table className="history-table">
-                        <thead>
-                          <tr>
-                            <th>CANDIDATE / SOURCE FILE</th>
-                            <th>SYNC STATUS</th>
-                            <th>TIMESTAMP</th>
-                            <th style={{ textAlign: 'right' }}>CONTROL</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {(() => {
-                            const processedIds = new Set(results.map(r => r.id));
-                            const dedupedHistory = [];
-                            const seen = new Set();
-
-                            [...history]
-                              .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-                              .forEach(item => {
-                                const key = item.filename.trim().toLowerCase();
-                                if (!seen.has(key)) {
-                                  seen.add(key);
-                                  dedupedHistory.push(item);
-                                }
-                              });
-
-                            // SHOW ALL RESUMES BY DEFAULT - Sorting latest first ensures the "Attendance Sheet" (newest) is on top
-                            const displayed = dedupedHistory;
-
-                            if (displayed.length === 0) {
-                              return (
-                                <tr>
-                                  <td colSpan="4" className="empty-state">
-                                    {showProcessed ? "No records found." : "All candidates currently analyzed. Enable HR Gateway for full history."}
-                                  </td>
-                                </tr>
-                              );
-                            }
-
-                            return displayed.map(item => {
-                              const isProcessed = processedIds.has(item.id);
-                              const isNew = (new Date() - new Date(item.created_at)) < (24 * 60 * 60 * 1000);
-                              return (
-                                <tr key={item.id} style={{ opacity: isProcessed ? 0.6 : 1 }}>
-                                  <td>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontWeight: 600 }}>
-                                      {item.filename}
-                                      {!isProcessed && isNew && <span className="badge-new">NEW</span>}
-                                    </div>
-                                  </td>
-                                  <td>
-                                    <span className={`status-tag ${isProcessed ? 'processed' : 'pending'}`}>
-                                      {isProcessed ? "✓ ANALYZED" : "● PENDING"}
-                                    </span>
-                                  </td>
-                                  <td style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-                                    {new Date(item.created_at).toLocaleDateString()}
-                                  </td>
-                                  <td style={{ textAlign: 'right' }}>
-                                    <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
-                                      {!isProcessed && (
-                                        <button className="btn-primary" style={{ padding: '8px 16px', fontSize: '0.8rem', width: 'auto' }} onClick={() => runAnalysis(null, item.id)}>Analyze</button>
-                                      )}
-                                      <button className="btn-secondary" style={{ padding: '8px', color: '#ff4444' }} onClick={() => handleDeleteResume(item.id)}><Trash2 size={16} /></button>
-                                    </div>
-                                  </td>
-                                </tr>
-                              );
-                            });
-                          })()}
-                        </tbody>
-                      </table>
-                    </div>
-                  ) : (
-                    <div className="glass-panel" style={{ padding: '4rem', textAlign: 'center', opacity: 0.5 }}>
-                      <p>Workforce library is currently empty.</p>
-                    </div>
-                  )}
-                </section>
-              )}
 
               {/* Analysis Result (Single Focus) */}
               <section className="results-section animate-slide-up" style={{ marginTop: '6rem' }}>
@@ -269,11 +173,6 @@ function App() {
                     <p style={{ color: 'var(--text-dim)' }}>AI extraction and matching for the latest upload</p>
                   </div>
                   <div style={{ display: 'flex', gap: '1rem' }}>
-                    {!showProcessed && (
-                      <button className="btn-secondary" onClick={() => setShowProcessed(true)} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <History size={18} /> Library
-                      </button>
-                    )}
                     {currentJobId && (
                       <button className="btn-secondary" onClick={() => runAnalysis(currentJobId)} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <RefreshCcw size={18} className={analyzing ? "animate-spin" : ""} /> {analyzing ? "Analyzing..." : "Refresh Result"}
@@ -354,7 +253,7 @@ function App() {
           } />
         </Routes>
       </div>
-    </BrowserRouter>
+    </BrowserRouter >
   );
 }
 
