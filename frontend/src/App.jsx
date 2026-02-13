@@ -263,50 +263,130 @@ function App() {
               </div>
 
               {/* Resume Library/History Section */}
-              <div style={{ marginTop: '5rem' }} className="animate-fade-in">
-                <h2 style={{ fontSize: '2rem', marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                  <History size={32} color="var(--primary)" /> Resume Library
-                </h2>
-                <div className="glass-panel card" style={{ padding: '0' }}>
-                  {history.length > 0 ? (
-                    <table className="history-table">
-                      <thead>
-                        <tr>
-                          <th>Filename</th>
-                          <th>Added on</th>
-                          <th style={{ textAlign: 'right' }}>Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {(() => {
-                          const dedupedHistory = [];
-                          const seen = new Set();
-                          [...history].forEach(item => {
-                            const key = item.filename.strip?.()?.toLowerCase() || item.filename.toLowerCase();
-                            if (!seen.has(key)) {
-                              seen.add(key);
-                              dedupedHistory.push(item);
-                            }
-                          });
-                          return dedupedHistory.map(item => (
-                            <tr key={item.id}>
-                              <td>{item.filename}</td>
-                              <td>{new Date(item.created_at).toLocaleDateString()}</td>
-                              <td style={{ textAlign: 'right' }}>
-                                <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
-                                  <button className="btn-secondary btn-sm" onClick={() => runAnalysis(null, item.id)}>Analyze This</button>
-                                  <button className="btn-delete" onClick={() => handleDeleteResume(item.id)}><Trash2 size={16} /></button>
-                                </div>
-                              </td>
-                            </tr>
-                          ));
-                        })()}
-                      </tbody>
-                    </table>
-                  ) : (
-                    <div style={{ padding: '3rem', textAlign: 'center', opacity: 0.5 }}>Your resume library is empty.</div>
-                  )}
+              <div style={{ marginTop: '5rem', marginBottom: '4rem' }} className="animate-fade-in">
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2.5rem' }}>
+                  <h2 style={{ fontSize: '2.25rem', margin: 0, display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <History size={36} color="var(--primary)" /> Resume Library
+                  </h2>
+                  <div className="status-indicator">
+                    <span className="dot pulse"></span> Connected to Pulse DB
+                  </div>
                 </div>
+
+                {history.length > 0 ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem' }}>
+                    {/* 1. Pending Section */}
+                    {(() => {
+                      const processedIds = new Set(results.map(r => r.id));
+                      const dedupedHistory = [];
+                      const seen = new Set();
+
+                      [...history].forEach(item => {
+                        const key = item.filename.trim().toLowerCase();
+                        if (!seen.has(key)) {
+                          seen.add(key);
+                          dedupedHistory.push(item);
+                        }
+                      });
+
+                      const pending = dedupedHistory.filter(h => !processedIds.has(h.id));
+                      const processed = dedupedHistory.filter(h => processedIds.has(h.id));
+
+                      return (
+                        <>
+                          <div className="library-section">
+                            <div className="section-header">
+                              <h3 className="section-title">Ready for Analysis</h3>
+                              <span className="section-count">{pending.length} Resumes</span>
+                            </div>
+
+                            <div className="glass-panel" style={{ padding: '0', overflow: 'hidden' }}>
+                              {pending.length > 0 ? (
+                                <table className="history-table">
+                                  <thead>
+                                    <tr>
+                                      <th>Candidate / File</th>
+                                      <th>Status</th>
+                                      <th>Added on</th>
+                                      <th style={{ textAlign: 'right' }}>Actions</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {pending.map(item => {
+                                      const isNew = (new Date() - new Date(item.created_at)) < (24 * 60 * 60 * 1000);
+                                      return (
+                                        <tr key={item.id} className="pending-row">
+                                          <td style={{ fontWeight: 600 }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                              {item.filename}
+                                              {isNew && <span className="mini-badge-new">NEW</span>}
+                                            </div>
+                                          </td>
+                                          <td><span className="status-tag pending">Pending Match</span></td>
+                                          <td style={{ opacity: 0.7 }}>{new Date(item.created_at).toLocaleDateString()}</td>
+                                          <td style={{ textAlign: 'right' }}>
+                                            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+                                              <button className="btn-primary btn-sm" onClick={() => runAnalysis(null, item.id)}>Analyze Candidate</button>
+                                              <button className="btn-delete" onClick={() => handleDeleteResume(item.id)}><Trash2 size={16} /></button>
+                                            </div>
+                                          </td>
+                                        </tr>
+                                      );
+                                    })}
+                                  </tbody>
+                                </table>
+                              ) : (
+                                <div className="empty-state">No pending resumes. All files have been analyzed!</div>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="library-section">
+                            <div className="section-header">
+                              <h3 className="section-title">Already Processed</h3>
+                              <span className="section-count">{processed.length} Resumes</span>
+                            </div>
+                            <div className="glass-panel" style={{ padding: '0', overflow: 'hidden', opacity: 0.85 }}>
+                              {processed.length > 0 ? (
+                                <table className="history-table">
+                                  <thead>
+                                    <tr>
+                                      <th>Candidate / File</th>
+                                      <th>Status</th>
+                                      <th>Added on</th>
+                                      <th style={{ textAlign: 'right' }}>Actions</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {processed.map(item => (
+                                      <tr key={item.id} className="processed-row">
+                                        <td style={{ opacity: 0.8 }}>{item.filename}</td>
+                                        <td><span className="status-tag processed">✓ Synced</span></td>
+                                        <td style={{ opacity: 0.6 }}>{new Date(item.created_at).toLocaleDateString()}</td>
+                                        <td style={{ textAlign: 'right' }}>
+                                          <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+                                            <button className="btn-secondary btn-sm" onClick={() => runAnalysis(null, item.id)}>Refresh Analysis</button>
+                                            <button className="btn-delete" onClick={() => handleDeleteResume(item.id)}><Trash2 size={16} /></button>
+                                          </div>
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              ) : (
+                                <div className="empty-state">No processed resumes yet. Run an analysis to see results.</div>
+                              )}
+                            </div>
+                          </div>
+                        </>
+                      );
+                    })()}
+                  </div>
+                ) : (
+                  <div className="glass-panel card animate-pulse" style={{ padding: '4rem', textAlign: 'center', opacity: 0.5 }}>
+                    <p style={{ fontSize: '1.2rem' }}>Your resume library is empty. Upload your first PDF to begin.</p>
+                  </div>
+                )}
               </div>
             </ProtectedRoute>
           } />
