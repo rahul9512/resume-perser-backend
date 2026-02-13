@@ -94,22 +94,28 @@ function App() {
     setCurrentJobId(targetJobId);
     const { data: { session } } = await supabase.auth.getSession();
     try {
-      const url = new URL(`${API_BASE_URL}/match-resumes`);
-      url.searchParams.append("job_id", targetJobId);
-      url.searchParams.append("resume_id", finalResumeId);
-
-      console.log("DEBUG: Fetching from URL:", url.toString());
-      const res = await fetch(url.toString(), {
+      const res = await fetch(`${API_BASE_URL}/match-resumes`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({})
+        body: JSON.stringify({
+          job_id: targetJobId,
+          resume_id: finalResumeId
+        })
       });
 
       const data = await res.json();
       console.log("DEBUG: API Response Received:", data);
+
+      if (!res.ok) {
+        console.error("DEBUG: Request failed:", data);
+        const errorInfo = data.detail?.[0]?.msg || data.error || data.message || "Unknown error";
+        alert("Match Engine Note: " + errorInfo);
+        setResults([]);
+        return;
+      }
 
       // Only show this specific result
       // If it's an array, set it. If it's an error object, wrap it or handle it.

@@ -2,12 +2,19 @@ from fastapi import APIRouter, Depends, Query
 from app.auth import verify_jwt
 from app.database import supabase
 from app.matcher import match_resume
-from typing import Optional
+from typing import Optional, List
+from pydantic import BaseModel
+
+class MatchRequest(BaseModel):
+    job_id: str
+    resume_id: Optional[str] = None
 
 router = APIRouter()
 
 @router.post("/match-resumes")
-def match_resumes(job_id: str = Query(...), resume_id: Optional[str] = Query(None), user=Depends(verify_jwt)):
+def match_resumes(req: MatchRequest, user=Depends(verify_jwt)):
+    job_id = req.job_id
+    resume_id = req.resume_id
     # 1. Fetch job details
     print(f"DEBUG: Starting match request for job_id: {job_id}")
     job_response = supabase.table("jobs").select("*").eq("job_id", job_id).execute()
