@@ -89,14 +89,16 @@ function App() {
       return;
     }
 
+    console.log("DEBUG: Starting runAnalysis", { targetJobId, finalResumeId });
     setAnalyzing(true);
     setCurrentJobId(targetJobId);
     const { data: { session } } = await supabase.auth.getSession();
     try {
       const url = new URL(`${API_BASE_URL}/match-resumes`);
       url.searchParams.append("job_id", targetJobId);
-      url.searchParams.append("resume_id", finalResumeId); // Fixed: Use the resolved ID
+      url.searchParams.append("resume_id", finalResumeId);
 
+      console.log("DEBUG: Fetching from URL:", url.toString());
       const res = await fetch(url.toString(), {
         method: 'POST',
         headers: {
@@ -105,13 +107,21 @@ function App() {
         },
         body: JSON.stringify({})
       });
+
       const data = await res.json();
+      console.log("DEBUG: API Response Received:", data);
 
       // Only show this specific result
-      setResults(data);
+      // If it's an array, set it. If it's an error object, wrap it or handle it.
+      setResults(Array.isArray(data) ? data : (data.error || data.message ? [] : []));
+
+      if (!Array.isArray(data) && (data.error || data.message)) {
+        alert("Analysis Note: " + (data.error || data.message));
+      }
+
       fetchHistory();
     } catch (e) {
-      console.error(e);
+      console.error("DEBUG: runAnalysis Error:", e);
       alert("Analysis engine encountered an error.");
     } finally {
       setAnalyzing(false);
