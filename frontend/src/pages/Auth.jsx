@@ -38,9 +38,9 @@ export default function Auth() {
   };
 
   return (
-    <div className="page-container animate-fade-in">
-      <div className="glass-panel auth-card">
-        <div style={{ textAlign: "center", marginBottom: "2.5rem" }}>
+    <div className="app-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '80vh' }}>
+      <div className="glass-panel auth-card animate-fade-in">
+        <div style={{ textAlign: "center", marginBottom: "3rem" }}>
           <div className="animate-float" style={{
             display: "inline-block",
             background: "linear-gradient(135deg, var(--primary), var(--indigo), var(--accent))",

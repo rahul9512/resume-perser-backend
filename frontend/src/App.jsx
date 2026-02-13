@@ -160,78 +160,8 @@ function App() {
                 </div>
               </div>
 
-              {/* Candidates Ranking Results */}
-              <section className="results-section animate-slide-up">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '3rem' }}>
-                  <div>
-                    <h2 style={{ marginBottom: '0.5rem' }}>Top Matches</h2>
-                    <p style={{ color: 'var(--text-dim)' }}>Ranked by AI weighted scoring algorithm</p>
-                  </div>
-                  {currentJobId && (
-                    <button className="btn-secondary" onClick={() => runAnalysis(currentJobId)} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <RefreshCcw size={18} className={analyzing ? "animate-spin" : ""} /> {analyzing ? "Ranking..." : "Refresh Scores"}
-                    </button>
-                  )}
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                  {results.length > 0 ? results.map((res, i) => (
-                    <div key={res.id || i} className={`glass-panel candidate-card animate-slide-up ${res.eligibility === 'Eligible' ? 'eligible' : 'not-eligible'}`} style={{ animationDelay: `${i * 0.1}s` }}>
-                      <div className="card-content">
-                        <div className="card-header">
-                          <h4 className="candidate-name">{res.filename || `Candidate #${i + 1}`}</h4>
-                          <span className={`status-badge ${res.eligibility === 'Eligible' ? 'eligible' : 'not-eligible'}`} style={{
-                            background: res.eligibility === 'Eligible' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(244, 63, 94, 0.1)',
-                            color: res.eligibility === 'Eligible' ? '#34d399' : '#fb7185',
-                            border: `1px solid ${res.eligibility === 'Eligible' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(244, 63, 94, 0.2)'}`
-                          }}>
-                            {res.eligibility}
-                          </span>
-                        </div>
-
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1.5rem' }}>
-                          {res.details?.matched_skills && res.details.matched_skills.map(s => (
-                            <span key={s} className="skill-tag">{s}</span>
-                          ))}
-                        </div>
-
-                        <div className="card-stats">
-                          <div className="stat-item">
-                            <span className="stat-label">EXP. GAP</span>
-                            <span className="stat-value">{res.details?.years_of_experience || 0} Years</span>
-                          </div>
-                          <div className="stat-item" style={{ borderLeft: '1px solid rgba(255,255,255,0.05)', paddingLeft: '1.5rem' }}>
-                            <span className="stat-label">ALIGNMENT</span>
-                            <span className="stat-value">{Math.round(res.details?.role_similarity) || 0}%</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="score-container">
-                        <div className="score-ring">
-                          <svg viewBox="0 0 36 36" className="circular-chart">
-                            <path className="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                            <path className="circle" strokeDasharray={`${res.match_score}, 100`} d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                          </svg>
-                          <div className="score-text">
-                            <span className="score-number">{Math.round(res.match_score) || 0}</span>
-                            <span className="score-percent">%</span>
-                          </div>
-                        </div>
-                        <p className="score-label">MATCH SCORE</p>
-                      </div>
-                    </div>
-                  )) : (
-                    <div className="glass-panel" style={{ textAlign: 'center', padding: '5rem', opacity: 0.5, borderStyle: 'dashed' }}>
-                      <BarChart3 size={48} style={{ marginBottom: '1.5rem', color: 'var(--primary)' }} />
-                      <p>Run analysis to generate candidate ranking reports.</p>
-                    </div>
-                  )}
-                </div>
-              </section>
-
-              {/* Resume Library with HR View Toggle */}
-              <section className="library-section animate-fade-in">
+              {/* Workforce Library (Moved to Top) */}
+              <section className="library-section animate-fade-in" style={{ marginTop: '5rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem' }}>
                   <h2 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '1rem' }}>
                     <History size={32} color="var(--primary)" /> Workforce Library
@@ -269,18 +199,18 @@ function App() {
                           const dedupedHistory = [];
                           const seen = new Set();
 
-                          [...history].forEach(item => {
-                            const key = item.filename.trim().toLowerCase();
-                            if (!seen.has(key)) {
-                              seen.add(key);
-                              dedupedHistory.push(item);
-                            }
-                          });
+                          [...history]
+                            .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+                            .forEach(item => {
+                              const key = item.filename.trim().toLowerCase();
+                              if (!seen.has(key)) {
+                                seen.add(key);
+                                dedupedHistory.push(item);
+                              }
+                            });
 
-                          // FILTER BASED ON TOGGLE
-                          const displayed = showProcessed
-                            ? dedupedHistory
-                            : dedupedHistory.filter(h => !processedIds.has(h.id));
+                          // SHOW ALL RESUMES BY DEFAULT - Sorting latest first ensures the "Attendance Sheet" (newest) is on top
+                          const displayed = dedupedHistory;
 
                           if (displayed.length === 0) {
                             return (
@@ -331,6 +261,84 @@ function App() {
                     <p>Workforce library is currently empty.</p>
                   </div>
                 )}
+              </section>
+
+              {/* Candidates Ranking Results */}
+              <section className="results-section animate-slide-up" style={{ marginTop: '6rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '3rem' }}>
+                  <div>
+                    <h2 style={{ marginBottom: '0.5rem' }}>Top Matches</h2>
+                    <p style={{ color: 'var(--text-dim)' }}>Ranked by AI weighted scoring algorithm</p>
+                  </div>
+                  {currentJobId && (
+                    <button className="btn-secondary" onClick={() => runAnalysis(currentJobId)} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <RefreshCcw size={18} className={analyzing ? "animate-spin" : ""} /> {analyzing ? "Ranking..." : "Refresh Scores"}
+                    </button>
+                  )}
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                  {results.length > 0 ? results.map((res, i) => (
+                    <div key={res.id || i} className={`glass-panel candidate-card animate-slide-up ${res.eligibility === 'Eligible' ? 'eligible' : 'not-eligible'}`} style={{ animationDelay: `${i * 0.1}s` }}>
+                      <div className="card-content">
+                        <div className="card-header">
+                          <h4 className="candidate-name">{res.filename || `Candidate #${i + 1}`}</h4>
+                          <span className={`status-badge ${res.eligibility === 'Eligible' ? 'eligible' : 'not-eligible'}`} style={{
+                            background: res.eligibility === 'Eligible' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(244, 63, 94, 0.1)',
+                            color: res.eligibility === 'Eligible' ? '#34d399' : '#fb7185',
+                            border: `1px solid ${res.eligibility === 'Eligible' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(244, 63, 94, 0.2)'}`
+                          }}>
+                            {res.eligibility}
+                          </span>
+                        </div>
+
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1.5rem' }}>
+                          {res.details?.matched_skills && res.details.matched_skills.map(s => (
+                            <span key={s} className="skill-tag">{s}</span>
+                          ))}
+                        </div>
+
+                        <div className="card-stats">
+                          <div className="stat-item">
+                            <span className="stat-label">EXP. GAP</span>
+                            <span className="stat-value">{res.details?.years_of_experience || 0} Years</span>
+                          </div>
+                          <div className="stat-item" style={{ borderLeft: '1px solid rgba(255,255,255,0.05)', paddingLeft: '1.5rem' }}>
+                            <span className="stat-label">ALIGNMENT</span>
+                            <span className="stat-value">{Math.round(res.details?.role_similarity) || 0}%</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="score-container">
+                        <div className="score-ring">
+                          <svg viewBox="0 0 36 36" className="circular-chart" style={{ transform: 'rotate(-90deg)' }}>
+                            <path className="circle-bg" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                            <path
+                              className="circle"
+                              fill="none"
+                              stroke={res.eligibility === 'Eligible' ? '#10b981' : (res.match_score > 50 ? 'var(--primary)' : '#f43f5e')}
+                              strokeDasharray={`${res.match_score}, 100`}
+                              d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                            />
+                          </svg>
+                          <div className="score-text">
+                            <span className="score-number" style={{ color: res.eligibility === 'Eligible' ? '#10b981' : (res.match_score > 50 ? 'white' : '#f43f5e') }}>
+                              {Math.round(res.match_score) || 0}
+                            </span>
+                            <span className="score-percent">%</span>
+                          </div>
+                        </div>
+                        <p className="score-label">MATCH SCORE</p>
+                      </div>
+                    </div>
+                  )) : (
+                    <div className="glass-panel" style={{ textAlign: 'center', padding: '5rem', opacity: 0.5, borderStyle: 'dashed' }}>
+                      <BarChart3 size={48} style={{ marginBottom: '1.5rem', color: 'var(--primary)' }} />
+                      <p>Run analysis to generate candidate ranking reports.</p>
+                    </div>
+                  )}
+                </div>
               </section>
             </ProtectedRoute>
           } />
