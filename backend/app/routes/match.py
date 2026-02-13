@@ -31,15 +31,18 @@ def match_resumes(job_id: str, resume_id: Optional[int] = Query(None), user=Depe
     if not resume_id:
         dedup_map = {}
         for r in raw_resumes:
-            fname = r.get("filename")
-            if not fname: continue
-            # If we haven't seen this filename or this version is newer (by id or created_at)
-            # Assuming id increases over time or created_at is reliable
-            if fname not in dedup_map or r["id"] > dedup_map[fname]["id"]:
-                dedup_map[fname] = r
+            orig_fname = r.get("filename")
+            if not orig_fname: continue
+            
+            # Use a normalized key for comparison
+            fname_key = orig_fname.strip().lower()
+            
+            # If we haven't seen this filename key or this version is newer (by id)
+            if fname_key not in dedup_map or r["id"] > dedup_map[fname_key]["id"]:
+                dedup_map[fname_key] = r
         
         filtered_resumes = list(dedup_map.values())
-        print(f"DEBUG: Deduplicated {len(raw_resumes)} resumes down to {len(filtered_resumes)}")
+        print(f"DEBUG: Deduplicated {len(raw_resumes)} resumes down to {len(filtered_resumes)} (Unique: {list(dedup_map.keys())})")
     else:
         filtered_resumes = raw_resumes
     

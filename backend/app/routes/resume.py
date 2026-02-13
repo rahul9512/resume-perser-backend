@@ -67,18 +67,33 @@ async def upload_resume(
         if not text:
              raise HTTPException(status_code=422, detail="Could not extract text from PDF. It might be empty or image-based.")
 
-        # 4. Save to Database
-        print("DEBUG: Inserting record into 'resumes' table...")
-        supabase.table("resumes").insert({
-            "user_id": user["sub"],
-            "filename": clean_name,
-            "content": text,
-            "file_url": file_url
-        }).execute()
-        print("DEBUG: Database insertion successful.")
+        # 4. Save to Database (Check for existing to prevent duplicates)
+        print(f"DEBUG: Checking if {clean_name} already exists for user...")
+        existing = supabase.table("resumes").select("id").eq("user_id", user["sub"]).eq("filename", clean_name).execute()
+        
+        if existing.data:
+            resume_id = existing.data[0]["id"]
+            print(f"DEBUG: Updating existing record ID: {resume_id}")
+            supabase.table("resumes").update({
+                "content": text,
+                "file_url": file_url,
+                "created_at": "now()"
+            }).eq("id", resume_id).execute()
+            status_msg = "Resume updated successfully"
+        else:
+            print("DEBUG: Inserting new record into 'resumes' table...")
+            supabase.table("resumes").insert({
+                "user_id": user["sub"],
+                "filename": clean_name,
+                "content": text,
+                "file_url": file_url
+            }).execute()
+            status_msg = "Resume uploaded and saved successfully"
+        
+        print("DEBUG: Database operation successful.")
 
         return {
-            "status": "Resume uploaded and saved successfully",
+            "status": status_msg,
             "file_url": file_url
         }
 
