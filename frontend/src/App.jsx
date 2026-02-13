@@ -215,25 +215,43 @@ function App() {
                   {results.length > 0 ? results.map((res, i) => (
                     <div key={res.id || i} className="glass-panel animate-slide-up candidate-card" style={{ borderLeft: `6px solid ${res.eligibility === 'Eligible' ? '#10b981' : '#ef4444'}` }}>
                       <div style={{ flex: 1 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', marginBottom: '0.75rem' }}>
-                          <h3 style={{ fontSize: '1.4rem', margin: 0 }}>{res.filename || `Candidate #${i + 1}`}</h3>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
+                          <h3 style={{ fontSize: '1.5rem', margin: 0, fontWeight: 700 }}>{res.filename || `Candidate #${i + 1}`}</h3>
                           <span className={`badge ${res.eligibility === 'Eligible' ? 'eligible' : 'not-eligible'}`}>
                             {res.eligibility}
                           </span>
                         </div>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1.5rem' }}>
                           {res.details?.matched_skills && res.details.matched_skills.map(s => (
                             <span key={s} className="skill-tag">{s}</span>
                           ))}
                         </div>
+
+                        <div className="card-stats">
+                          <div className="stat-item">
+                            <span className="stat-label">Experience</span>
+                            <span className="stat-value">{res.details?.years_of_experience || 0} Years</span>
+                          </div>
+                          <div className="stat-item">
+                            <span className="stat-label">Role Similarity</span>
+                            <span className="stat-value">{Math.round(res.details?.role_similarity) || 0}%</span>
+                          </div>
+                        </div>
                       </div>
 
-                      <div style={{ textAlign: 'right', display: 'flex', alignItems: 'center', gap: '2.5rem' }}>
-                        <div>
-                          <p className="score-main">{Math.round(res.match_score) || 0}<span style={{ fontSize: '1.2rem', opacity: 0.5 }}>%</span></p>
-                          <p className="score-sub">Match Score</p>
+                      <div className="score-container">
+                        <div className="score-ring">
+                          <svg viewBox="0 0 36 36" className="circular-chart">
+                            <path className="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                            <path className="circle" strokeDasharray={`${res.match_score}, 100`} d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                          </svg>
+                          <div className="score-text">
+                            <span className="score-number">{Math.round(res.match_score) || 0}</span>
+                            <span className="score-percent">%</span>
+                          </div>
                         </div>
-                        <button className="btn-secondary" onClick={() => window.open(res.file_url, '_blank')}>View</button>
+                        <p className="score-label">Match Score</p>
                       </div>
                     </div>
                   )) : (

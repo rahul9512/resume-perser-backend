@@ -24,13 +24,31 @@ def match_resumes(job_id: str, resume_id: Optional[int] = Query(None), user=Depe
         query = query.eq("id", resume_id)
     
     resumes_response = query.execute()
+    raw_resumes = resumes_response.data or []
+
+    # 3. Deduplicate by filename (keep latest)
+    # If a specific resume_id is requested, we don't deduplicate the list
+    if not resume_id:
+        dedup_map = {}
+        for r in raw_resumes:
+            fname = r.get("filename")
+            if not fname: continue
+            # If we haven't seen this filename or this version is newer (by id or created_at)
+            # Assuming id increases over time or created_at is reliable
+            if fname not in dedup_map or r["id"] > dedup_map[fname]["id"]:
+                dedup_map[fname] = r
+        
+        filtered_resumes = list(dedup_map.values())
+        print(f"DEBUG: Deduplicated {len(raw_resumes)} resumes down to {len(filtered_resumes)}")
+    else:
+        filtered_resumes = raw_resumes
     
-    if not resumes_response.data:
+    if not filtered_resumes:
          print(f"WARNING: No resumes found for user {user['sub']}")
          return {"message": "No resumes found to match against."}
 
-    resume_contents = [r["content"] for r in resumes_response.data if r.get("content")]
-    print(f"DEBUG: Found {len(resume_contents)} resumes with content out of {len(resumes_response.data)}")
+    resume_contents = [r["content"] for r in filtered_resumes if r.get("content")]
+    print(f"DEBUG: Found {len(resume_contents)} resumes with content out of {len(filtered_resumes)}")
     
     if not resume_contents:
         return {"message": "Selected resumes have no text content."}
@@ -47,10 +65,10 @@ def match_resumes(job_id: str, resume_id: Optional[int] = Query(None), user=Depe
         if results:
             for res in results:
                 idx = res["resume_index"]
-                res["filename"] = resumes_response.data[idx].get("filename")
-                res["id"] = resumes_response.data[idx].get("id")
-                res["created_at"] = resumes_response.data[idx].get("created_at")
-                res["file_url"] = resumes_response.data[idx].get("file_url")
+                res["filename"] = filtered_resumes[idx].get("filename")
+                res["id"] = filtered_resumes[idx].get("id")
+                res["created_at"] = filtered_resumes[idx].get("created_at")
+                res["file_url"] = filtered_resumes[idx].get("file_url")
 
             # Save to results table if analyzing all
             if not resume_id:
