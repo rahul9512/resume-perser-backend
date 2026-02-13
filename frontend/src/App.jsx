@@ -55,7 +55,7 @@ function App() {
   }, []);
 
   const fetchHistory = async () => {
-    const { data } = await supabase.table("resumes").select("*").order("created_at", { ascending: false });
+    const { data } = await supabase.from("resumes").select("*").order("created_at", { ascending: false });
     if (data) setHistory(data);
   };
 
